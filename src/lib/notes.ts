@@ -21,15 +21,12 @@ export async function listNotes(userId: string): Promise<Note[]> {
   const cached = await cacheGet(listKey(userId));
   
   if (cached) {
-    console.log("listNotes cache hit");
     // JSON turns Dates into strings; turn them back.
     return (JSON.parse(cached) as Note[]).map((n) => ({
       ...n,
       createdAt: new Date(n.createdAt),
     }));
   }
-
-  console.log("listNotes cache miss");
 
   // 2. Miss: read from Aurora, then fill the cache for next time.
   const rows = await db
