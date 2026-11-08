@@ -3,12 +3,22 @@
 // repository and then drop the cached list.
 import type { Cache } from "@/shared/application/cache";
 import type { NotesRepository } from "../application/notes-repository";
-import type { Note, NoteDraft, NoteId } from "../domain/note";
+import { noteSchema, type Note, type NoteDraft, type NoteId } from "../domain/note";
 
 // "v2": the cached shape changed (ownerId instead of userId), so old "v1"
 // entries are simply never read again and expire on their own.
 const listKey = (ownerId: string) => `notes:v2:${ownerId}`;
 const LIST_TTL_SECONDS = 180; // 3 minutes; caps staleness if a delete is ever missed
+
+const cachedNotesSchema = noteSchema.array();
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
 
 export class CachedNotesRepository implements NotesRepository {
   constructor(
@@ -19,11 +29,10 @@ export class CachedNotesRepository implements NotesRepository {
   async listByOwner(ownerId: string): Promise<Note[]> {
     const cached = await this.cache.get(listKey(ownerId));
     if (cached) {
-      // JSON turns Dates into strings; turn them back.
-      return (JSON.parse(cached) as Note[]).map((n) => ({
-        ...n,
-        createdAt: new Date(n.createdAt),
-      }));
+      // Validate with the domain schema (it also turns JSON date strings back
+      // into Dates). Anything unexpected is treated as a miss, not a crash.
+      const parsed = cachedNotesSchema.safeParse(safeJson(cached));
+      if (parsed.success) return parsed.data;
     }
 
     const notes = await this.inner.listByOwner(ownerId);

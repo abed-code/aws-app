@@ -1,11 +1,11 @@
 // Use cases tested with an in-memory fake repository: no Aurora, no Valkey,
 // no AWS login. That's the payoff of depending on the NotesRepository port.
 import { beforeEach, describe, expect, it } from "vitest";
-import { InvalidNoteError, type Note, type NoteDraft } from "../../domain/note";
-import type { NotesRepository } from "../notes-repository";
-import { makeCreateNote } from "./create-note";
-import { makeDeleteNote } from "./delete-note";
-import { makeListNotes } from "./list-notes";
+import { InvalidNoteError, type Note, type NoteDraft } from "../../../domain/note";
+import type { NotesRepository } from "../../notes-repository";
+import { makeCreateNote } from "../create-note";
+import { makeDeleteNote } from "../delete-note";
+import { makeListNotes } from "../list-notes";
 
 class InMemoryNotesRepository implements NotesRepository {
   notes: Note[] = [];

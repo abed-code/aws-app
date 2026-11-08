@@ -1,24 +1,39 @@
-// Domain: what a note IS and the rules every note obeys.
-// Pure TypeScript: no framework, database, or AWS imports (enforced by ESLint).
-
-export type NoteId = string;
-
-export type Note = {
-  id: NoteId;
-  ownerId: string; // the user who owns the note (Cognito "sub")
-  title: string;
-  body: string;
-  createdAt: Date;
-};
+// Domain: what a note IS and the rules every note obeys, written as Zod schemas.
+// Zod is allowed here because it's pure validation: no I/O, framework, database
+// or AWS imports (those are blocked by ESLint).
+import { z } from "zod";
 
 export const NOTE_TITLE_MAX_LENGTH = 200;
 export const NOTE_BODY_MAX_LENGTH = 5000;
 
+/** Note ids are UUIDs; anything else can't refer to a note. */
+export const noteIdSchema = z.uuid();
+export type NoteId = z.infer<typeof noteIdSchema>;
+
+/** A stored note. Also used to safely read notes back from outside (e.g. a cache). */
+export const noteSchema = z.object({
+  id: noteIdSchema,
+  ownerId: z.string().min(1), // the user who owns the note (Cognito "sub")
+  title: z.string(),
+  body: z.string(),
+  createdAt: z.coerce.date(), // accepts a Date or an ISO string (JSON)
+});
+export type Note = z.infer<typeof noteSchema>;
+
+// Untrusted text from a form: missing → "", trimmed, cut to `max` characters.
+// (The form already limits length, so cutting only catches crafted input.)
+const formText = (max: number) =>
+  z
+    .preprocess((value) => value ?? "", z.string().trim())
+    .transform((text) => text.slice(0, max));
+
+/** Rules for a new note, before it's saved. */
+export const noteDraftSchema = z.object({
+  title: formText(NOTE_TITLE_MAX_LENGTH).pipe(z.string().min(1, "A note needs a title.")),
+  body: formText(NOTE_BODY_MAX_LENGTH),
+});
 /** A validated, normalized note that hasn't been saved yet. */
-export type NoteDraft = {
-  readonly title: string;
-  readonly body: string;
-};
+export type NoteDraft = Readonly<z.infer<typeof noteDraftSchema>>;
 
 export class InvalidNoteError extends Error {
   constructor(message: string) {
@@ -27,27 +42,15 @@ export class InvalidNoteError extends Error {
   }
 }
 
-/**
- * Builds a NoteDraft from untrusted input (e.g. a form).
- * Rules: text is trimmed; a title is required; over-long text is cut to the
- * maximum length (the form already limits it, so this only catches crafted input).
- */
+/** Builds a NoteDraft from untrusted input; throws InvalidNoteError if a rule is broken. */
 export function createNoteDraft(input: { title: unknown; body: unknown }): NoteDraft {
-  const title = String(input.title ?? "").trim();
-  const body = String(input.body ?? "").trim();
-
-  if (!title) throw new InvalidNoteError("A note needs a title.");
-
-  return {
-    title: title.slice(0, NOTE_TITLE_MAX_LENGTH),
-    body: body.slice(0, NOTE_BODY_MAX_LENGTH),
-  };
+  const result = noteDraftSchema.safeParse(input);
+  if (!result.success) {
+    throw new InvalidNoteError(result.error.issues[0]?.message ?? "Invalid note.");
+  }
+  return result.data;
 }
 
-const NOTE_ID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Note ids are UUIDs; anything else can't refer to a note. */
 export function isNoteId(value: unknown): value is NoteId {
-  return typeof value === "string" && NOTE_ID_PATTERN.test(value);
+  return noteIdSchema.safeParse(value).success;
 }
