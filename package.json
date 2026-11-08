@@ -6,23 +6,41 @@
     "dev": "next dev -p 3030",
     "build": "next build",
     "start": "next start -p 3030",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file=.env.local scripts/migrate.mts",
+    "db:studio": "tsx --env-file=.env.local scripts/with-db-token.mts drizzle-kit studio",
+    "db:token": "tsx --env-file=.env.local scripts/with-db-token.mts printenv PGPASSWORD",
+    "db:bootstrap": "tsx --env-file=.env.local scripts/bootstrap-db.mts"
   },
   "dependencies": {
+    "@aws-sdk/credential-provider-node": "^3.972.94",
+    "@aws-sdk/rds-signer": "^3.1164.0",
+    "@smithy/hash-node": "^4.5.2",
+    "@smithy/protocol-http": "^5.6.2",
+    "@smithy/querystring-builder": "^4.5.2",
+    "@smithy/signature-v4": "^5.7.5",
+    "@valkey/valkey-glide": "^2.5.3",
+    "drizzle-orm": "^0.45.4",
     "iron-session": "^9.0.1",
     "next": "16.4.5",
     "openid-client": "^6.8.9",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.9",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.24.0"

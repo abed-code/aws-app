@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { isAwsCredentialsError } from "@/db/connection";
 import { getCurrentUser, type User } from "@/lib/auth";
 import { listNotes } from "@/lib/notes";
 import { createNoteAction, deleteNoteAction } from "./actions";
@@ -94,7 +95,13 @@ function NewNoteForm() {
 }
 
 async function NotesList({ user }: { user: User }) {
-  const notes = await listNotes(user.id);
+  let notes;
+  try {
+    notes = await listNotes(user.id);
+  } catch (err) {
+    if (isAwsCredentialsError(err)) return <AwsLoginNotice />;
+    throw err;
+  }
 
   if (notes.length === 0) {
     return <p className="text-zinc-500">No notes yet. Add your first one above.</p>;
@@ -110,7 +117,7 @@ async function NotesList({ user }: { user: User }) {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="font-medium">{note.title}</h2>
-              <time className="text-xs text-zinc-500" dateTime={note.createdAt}>
+              <time className="text-xs text-zinc-500" dateTime={note.createdAt.toISOString()}>
                 {new Date(note.createdAt).toLocaleString()}
               </time>
             </div>
@@ -130,5 +137,22 @@ async function NotesList({ user }: { user: User }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+// Local dev only: shown when the `aws login` session has expired, instead of
+// a generic database error.
+function AwsLoginNotice() {
+  return (
+    <div
+      role="alert"
+      className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+    >
+      <p className="font-medium">Can&apos;t reach the database: AWS session expired</p>
+      <p className="mt-1">
+        Run <code className="font-mono">aws login --region us-east-1</code> in your
+        terminal, then reload this page. No restart needed.
+      </p>
+    </div>
   );
 }
