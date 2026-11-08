@@ -3,7 +3,7 @@
 // Creates the app's own login (IAM-only) and a database it owns.
 // Safe to re-run: every step checks first.
 import pg from "pg";
-import { dbConfig } from "../src/db/connection";
+import { dbConfig } from "../src/shared/infrastructure/db/connection";
 
 const APP_USER = "notes_app";
 const APP_DB = "notes";

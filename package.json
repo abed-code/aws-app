@@ -11,7 +11,9 @@
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.mts",
     "db:studio": "tsx --env-file=.env.local scripts/with-db-token.mts drizzle-kit studio",
     "db:token": "tsx --env-file=.env.local scripts/with-db-token.mts printenv PGPASSWORD",
-    "db:bootstrap": "tsx --env-file=.env.local scripts/bootstrap-db.mts"
+    "db:bootstrap": "tsx --env-file=.env.local scripts/bootstrap-db.mts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/credential-provider-node": "^3.972.94",
@@ -41,7 +43,8 @@
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@10.24.0"
 }

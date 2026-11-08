@@ -1,11 +1,12 @@
-// Valkey (Amazon ElastiCache Serverless) client, used as an optional cache.
+// Adapter: the Cache port implemented with Valkey (Amazon ElastiCache Serverless).
 //
 // Design rule: the cache must never break the app. If it's not configured,
-// unreachable, or slow, every helper quietly returns "miss" and the caller
-// falls back to Aurora.
+// unreachable, or slow, every method quietly behaves like a miss and the
+// caller falls back to the database.
 
 import { GlideClusterClient, Logger, TimeUnit } from "@valkey/valkey-glide";
-import { createCacheAuthToken } from "@/lib/cache-token";
+import type { Cache } from "@/shared/application/cache";
+import { createCacheAuthToken } from "./cache-token";
 
 const HOST = process.env.VALKEY_HOST; // unset = caching disabled
 const PORT = Number(process.env.VALKEY_PORT ?? 6379);
@@ -71,7 +72,7 @@ async function getClient(): Promise<GlideClusterClient | null> {
   }
 }
 
-export async function cacheGet(key: string): Promise<string | null> {
+async function get(key: string): Promise<string | null> {
   try {
     const client = await getClient();
     const value = await client?.get(key);
@@ -82,7 +83,7 @@ export async function cacheGet(key: string): Promise<string | null> {
   }
 }
 
-export async function cacheSet(key: string, value: string, ttlSeconds: number) {
+async function set(key: string, value: string, ttlSeconds: number) {
   try {
     const client = await getClient();
     await client?.set(key, value, { expiry: { type: TimeUnit.Seconds, count: ttlSeconds } });
@@ -91,7 +92,7 @@ export async function cacheSet(key: string, value: string, ttlSeconds: number) {
   }
 }
 
-export async function cacheDelete(key: string) {
+async function remove(key: string) {
   try {
     const client = await getClient();
     await client?.del([key]);
@@ -99,3 +100,5 @@ export async function cacheDelete(key: string) {
     console.warn("[cache] delete failed:", (err as Error).message);
   }
 }
+
+export const valkeyCache: Cache = { get, set, delete: remove };

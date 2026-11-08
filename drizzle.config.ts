@@ -8,7 +8,7 @@ config({ path: ".env.local" });
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/db/schema.ts",
+  schema: "./src/shared/infrastructure/db/schema.ts",
   out: "./drizzle", // generated SQL migrations (commit these)
   // Only `drizzle-kit studio` connects. Run it via `pnpm db:studio`, which
   // puts a fresh IAM token in PGPASSWORD. (`generate` works offline.)

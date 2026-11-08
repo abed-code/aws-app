@@ -1,7 +1,7 @@
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-// Single source of truth for the database. Change this file, then run
-// `pnpm db:generate` to produce a SQL migration and `pnpm db:migrate` to apply it.
+// The notes table (Drizzle). Change it, then run `pnpm db:generate` to produce
+// a SQL migration and `pnpm db:migrate` to apply it.
 export const notes = pgTable(
   "notes",
   {
@@ -17,4 +17,4 @@ export const notes = pgTable(
   (t) => [index("notes_user_created_idx").on(t.userId, t.createdAt.desc())],
 );
 
-export type Note = typeof notes.$inferSelect;
+export type NoteRow = typeof notes.$inferSelect;
